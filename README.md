@@ -18,15 +18,15 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export OPENAI_API_KEY="tu_api_key"
+export GEMINI_API_KEY="tu_api_key"
 uvicorn app.main:app --reload
 ```
 
 You can also create a local `.env` file:
 
 ```bash
-OPENAI_API_KEY=tu_api_key
-OPENAI_MODEL=gpt-5.4-mini
+GEMINI_API_KEY=tu_api_key
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### Frontend
