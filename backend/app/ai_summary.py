@@ -7,8 +7,10 @@ from openai import OpenAI
 
 DEFAULT_MODEL = "gpt-5.4-mini"
 ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+BACKEND_ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 
 load_dotenv(dotenv_path=ENV_PATH)
+load_dotenv(dotenv_path=BACKEND_ENV_PATH, override=True)
 
 
 def _format_feature(value: Any, unit: str = "") -> str:

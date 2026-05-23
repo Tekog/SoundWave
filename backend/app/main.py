@@ -49,7 +49,10 @@ def create_song_summary(features: SongFeatures) -> dict[str, str]:
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
-        raise HTTPException(status_code=502, detail=f"No se pudo generar el analisis: {error}") from error
+        raise HTTPException(
+            status_code=502,
+            detail="No se pudo generar el analisis. Revisa OPENAI_API_KEY y OPENAI_MODEL.",
+        ) from error
 
     return {"summary": summary}
 
@@ -64,6 +67,9 @@ def create_youtube_summary(payload: YoutubeAnalysisRequest) -> dict[str, str]:
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
-        raise HTTPException(status_code=502, detail=f"No se pudo analizar el link: {error}") from error
+        raise HTTPException(
+            status_code=502,
+            detail="No se pudo analizar el link. Revisa OPENAI_API_KEY y OPENAI_MODEL.",
+        ) from error
 
     return {"summary": summary}
