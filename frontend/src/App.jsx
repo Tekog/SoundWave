@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileAudio, UploadCloud, X } from "lucide-react";
+import { FileAudio, MessageSquare, Plus, Search, Send, UploadCloud, X } from "lucide-react";
 import { uploadAudio } from "./api/audio";
 import appConfig from "./config/app.json";
 import "./styles.css";
@@ -16,6 +16,7 @@ export default function App() {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
 
@@ -70,71 +71,128 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <section className="workspace">
-        <div className="title-group">
-          <p>SoundWave</p>
-          <h1>Arrastra un archivo de audio</h1>
-        </div>
+      <header className="topbar">
+        <a className="brand" href="/" aria-label="SoundWave inicio">
+          SoundWave
+        </a>
 
-        <button
-          className={`dropzone ${isDragging ? "is-dragging" : ""}`}
-          type="button"
-          onClick={openFilePicker}
-          onDragEnter={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragOver={(event) => event.preventDefault()}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(event) => {
-            event.preventDefault();
-            setIsDragging(false);
-            handleFile(event.dataTransfer.files[0]);
-          }}
-        >
-          <UploadCloud size={42} strokeWidth={1.7} />
-          <span>Suelta tu audio aca o toca para elegirlo</span>
-          <small>MP3, WAV, AAC, M4A u OGG hasta {appConfig.maxFileSizeMb} MB</small>
+        <label className="search-field">
+          <Search size={18} />
+          <input
+            type="search"
+            placeholder="Buscar audios, artistas o proyectos"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        </label>
+
+        <button className="add-audio-button" type="button" onClick={openFilePicker}>
+          <Plus size={18} />
+          Agregar audio
         </button>
+      </header>
 
-        <input
-          ref={inputRef}
-          type="file"
-          accept="audio/*"
-          onChange={(event) => handleFile(event.target.files[0])}
-          hidden
-        />
-
-        {selectedFile ? (
-          <div className="file-row">
-            <FileAudio size={24} />
-            <div>
-              <strong>{selectedFile.name}</strong>
-              <span>{formatBytes(selectedFile.size)}</span>
-            </div>
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="Quitar archivo"
-              onClick={() => {
-                setSelectedFile(null);
-                setStatus("idle");
-                setMessage("");
-              }}
-            >
-              <X size={18} />
-            </button>
+      <section className="workspace">
+        <div className="audio-panel">
+          <div className="title-group">
+            <p>Biblioteca</p>
+            <h1>Arrastra un archivo de audio</h1>
           </div>
-        ) : null}
 
-        <div className="actions">
-          <button type="button" onClick={handleUpload} disabled={!selectedFile || status === "uploading"}>
-            Subir audio
+          <button
+            className={`dropzone ${isDragging ? "is-dragging" : ""}`}
+            type="button"
+            onClick={openFilePicker}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setIsDragging(false);
+              handleFile(event.dataTransfer.files[0]);
+            }}
+          >
+            <UploadCloud size={42} strokeWidth={1.7} />
+            <span>Suelta tu audio aca o toca para elegirlo</span>
+            <small>MP3, WAV, AAC, M4A u OGG hasta {appConfig.maxFileSizeMb} MB</small>
           </button>
-          {message ? <p className={`status ${status}`}>{message}</p> : null}
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept="audio/*"
+            onChange={(event) => handleFile(event.target.files[0])}
+            hidden
+          />
+
+          <div className="library-section">
+            <div className="section-heading">
+              <h2>Archivos de audio</h2>
+              <span>{selectedFile ? "1 archivo seleccionado" : "Sin archivos"}</span>
+            </div>
+
+            {selectedFile ? (
+              <div className="file-row">
+                <FileAudio size={24} />
+                <div>
+                  <strong>{selectedFile.name}</strong>
+                  <span>{formatBytes(selectedFile.size)}</span>
+                </div>
+                <button
+                  className="icon-button"
+                  type="button"
+                  aria-label="Quitar archivo"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setStatus("idle");
+                    setMessage("");
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="empty-library">
+                <FileAudio size={22} />
+                <span>Todavia no agregaste audios.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="actions">
+            <button type="button" onClick={handleUpload} disabled={!selectedFile || status === "uploading"}>
+              Subir audio
+            </button>
+            {message ? <p className={`status ${status}`}>{message}</p> : null}
+          </div>
         </div>
+
+        <aside className="chat-panel" aria-label="Chat futuro">
+          <div className="chat-heading">
+            <MessageSquare size={22} />
+            <div>
+              <h2>Chat</h2>
+              <span>Proximamente</span>
+            </div>
+          </div>
+
+          <div className="chat-thread">
+            <div className="chat-bubble">
+              Cuando conectemos el analisis, aca vas a poder preguntar sobre el audio cargado.
+            </div>
+          </div>
+
+          <label className="chat-input">
+            <input type="text" placeholder="Preguntar sobre este audio" disabled />
+            <button type="button" aria-label="Enviar mensaje" disabled>
+              <Send size={18} />
+            </button>
+          </label>
+        </aside>
       </section>
     </main>
   );
 }
-
