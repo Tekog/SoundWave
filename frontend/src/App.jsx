@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import { Bot, FileAudio, MessageSquare, Plus, Search, Send, UploadCloud, X } from "lucide-react";
+import { Bot, FileAudio, Link, MessageSquare, Plus, Search, Send, UploadCloud, X } from "lucide-react";
 import { uploadAudio } from "./api/audio";
 import { generateSongSummary } from "./api/songSummary";
+import { generateYoutubeSummary } from "./api/youtubeSummary";
 import appConfig from "./config/app.json";
 import "./styles.css";
 
@@ -34,7 +35,9 @@ function getAudioDuration(file) {
 export default function App() {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [inputMode, setInputMode] = useState("file");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
@@ -117,7 +120,41 @@ export default function App() {
     }
   }
 
+  async function handleYoutubeAnalysis(event) {
+    event.preventDefault();
+
+    const trimmedUrl = youtubeUrl.trim();
+
+    if (!trimmedUrl) {
+      setStatus("error");
+      setMessage("Pega un link de YouTube para analizar.");
+      return;
+    }
+
+    setStatus("uploading");
+    setMessage("Analizando link de YouTube...");
+    setSelectedFile(null);
+    setSongFeatures({ filename: trimmedUrl, source: "youtube" });
+    setIsChatOpen(true);
+    setChatStatus("analyzing");
+    setChatSummary("");
+
+    try {
+      const result = await generateYoutubeSummary(trimmedUrl);
+      setStatus("success");
+      setMessage("Analisis del link generado.");
+      setChatSummary(result.summary);
+      setChatStatus("ready");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error.message);
+      setChatStatus("error");
+      setChatSummary(error.message);
+    }
+  }
+
   function openFilePicker() {
+    setInputMode("file");
     inputRef.current?.click();
   }
 
@@ -148,29 +185,65 @@ export default function App() {
         <div className="audio-panel">
           <div className="title-group">
             <p>Biblioteca</p>
-            <h1>Arrastra un archivo de audio</h1>
+            <h1>Subi un tema o pega un link</h1>
           </div>
 
-          <button
-            className={`dropzone ${isDragging ? "is-dragging" : ""}`}
-            type="button"
-            onClick={openFilePicker}
-            onDragEnter={(event) => {
-              event.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setIsDragging(false);
-              handleFile(event.dataTransfer.files[0]);
-            }}
-          >
-            <UploadCloud size={42} strokeWidth={1.7} />
-            <span>Suelta tu audio aca o toca para elegirlo</span>
-            <small>MP3, WAV, AAC, M4A u OGG hasta {appConfig.maxFileSizeMb} MB</small>
-          </button>
+          <div className="mode-switch" aria-label="Modo de entrada">
+            <button
+              className={inputMode === "file" ? "is-active" : ""}
+              type="button"
+              onClick={() => setInputMode("file")}
+            >
+              <FileAudio size={18} />
+              Archivo
+            </button>
+            <button
+              className={inputMode === "youtube" ? "is-active" : ""}
+              type="button"
+              onClick={() => setInputMode("youtube")}
+            >
+              <Link size={18} />
+              YouTube
+            </button>
+          </div>
+
+          {inputMode === "file" ? (
+            <button
+              className={`dropzone ${isDragging ? "is-dragging" : ""}`}
+              type="button"
+              onClick={openFilePicker}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDragging(false);
+                handleFile(event.dataTransfer.files[0]);
+              }}
+            >
+              <UploadCloud size={42} strokeWidth={1.7} />
+              <span>Suelta tu audio aca o toca para elegirlo</span>
+              <small>MP3, WAV, AAC, M4A u OGG hasta {appConfig.maxFileSizeMb} MB</small>
+            </button>
+          ) : (
+            <form className="youtube-form" onSubmit={handleYoutubeAnalysis}>
+              <label>
+                <Link size={24} />
+                <input
+                  type="url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={youtubeUrl}
+                  onChange={(event) => setYoutubeUrl(event.target.value)}
+                />
+              </label>
+              <button type="submit" disabled={status === "uploading"}>
+                Analizar link
+              </button>
+            </form>
+          )}
 
           <input
             ref={inputRef}
@@ -244,7 +317,8 @@ export default function App() {
 
             {isChatOpen && songFeatures ? (
               <div className="chat-bubble user">
-                Analiza {songFeatures.filename}
+                {songFeatures.source === "youtube" ? "Analiza este link: " : "Analiza "}
+                {songFeatures.filename}
                 {songFeatures.duration ? `, duracion ${songFeatures.duration} segundos` : ""}.
               </div>
             ) : null}

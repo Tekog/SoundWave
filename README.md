@@ -22,6 +22,13 @@ export OPENAI_API_KEY="tu_api_key"
 uvicorn app.main:app --reload
 ```
 
+You can also create a local `.env` file:
+
+```bash
+OPENAI_API_KEY=tu_api_key
+OPENAI_MODEL=gpt-5.4-mini
+```
+
 ### Frontend
 
 ```bash

@@ -1,9 +1,12 @@
 import os
 from typing import Any, Mapping
 
+from dotenv import load_dotenv
 from openai import OpenAI
 
 DEFAULT_MODEL = "gpt-5.4-mini"
+
+load_dotenv()
 
 
 def _format_feature(value: Any, unit: str = "") -> str:
@@ -43,6 +46,37 @@ def generate_song_summary(features: Mapping[str, Any]) -> str:
             "Devolvé un resumen musical con estas secciones: lectura general, pulso y movimiento, "
             "sensación emocional, posibles decisiones de producción, y próximos datos útiles "
             "para analizar tonalidad, armonía y estructura."
+        ),
+    )
+
+    return response.output_text
+
+
+def generate_youtube_summary(youtube_url: str) -> str:
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not configured.")
+
+    client = OpenAI(api_key=api_key)
+
+    response = client.responses.create(
+        model=os.getenv("OPENAI_MODEL", DEFAULT_MODEL),
+        tools=[{"type": "web_search"}],
+        tool_choice="auto",
+        instructions=(
+            "Sos un analista musical experto. Respondé siempre en español, con criterio musical "
+            "profundo y lenguaje claro. Usá la búsqueda web solo para identificar el video, la "
+            "canción, el artista y contexto público disponible. Si no podés acceder al audio real "
+            "o no hay datos técnicos confiables, aclaralo sin inventar BPM, tonalidad ni armonía."
+        ),
+        input=(
+            "Analizá este link de YouTube para SoundWave:\n\n"
+            f"{youtube_url}\n\n"
+            "Devolvé un análisis profundo con estas secciones: identificación del tema, lectura "
+            "musical general, posible pulso/BPM si hay evidencia, posible tonalidad/armonía si hay "
+            "evidencia, sensación emocional, producción/arreglo, y límites del análisis cuando falte "
+            "acceso directo al audio."
         ),
     )
 

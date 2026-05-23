@@ -132,6 +132,37 @@ button {
   letter-spacing: 0;
 }
 
+.mode-switch {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  border: 1px solid #d9d0c2;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.mode-switch button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  color: #4d5954;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.mode-switch button.is-active {
+  color: #fff;
+  background: #1f736e;
+}
+
 .dropzone {
   width: 100%;
   min-height: 260px;
@@ -167,6 +198,50 @@ button {
 .dropzone small {
   color: #5e6a65;
   font-size: 0.95rem;
+}
+
+.youtube-form {
+  display: grid;
+  gap: 14px;
+}
+
+.youtube-form label {
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 2px dashed #78958d;
+  border-radius: 8px;
+  color: #1f736e;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.youtube-form input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #16201d;
+  background: transparent;
+  font: inherit;
+}
+
+.youtube-form button {
+  min-height: 46px;
+  justify-self: start;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #c75237;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.youtube-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .library-section {
@@ -467,6 +542,15 @@ button {
   .dropzone {
     min-height: 230px;
     padding: 24px 16px;
+  }
+
+  .mode-switch,
+  .youtube-form button {
+    width: 100%;
+  }
+
+  .youtube-form button {
+    justify-self: stretch;
   }
 
   .actions {
