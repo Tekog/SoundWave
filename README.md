@@ -1,5 +1,7 @@
 # SoundWave
 
+App web para analizar canciones a otro nivel.
+
 SoundWave is a web app for working with audio files. The first milestone is a drag-and-drop upload experience, with a Python backend and a React frontend.
 
 ## Project Structure
@@ -26,4 +28,3 @@ cd frontend
 npm install
 npm run dev
 ```
-
