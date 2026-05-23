@@ -1,12 +1,14 @@
 import os
+from pathlib import Path
 from typing import Any, Mapping
 
 from dotenv import load_dotenv
 from openai import OpenAI
 
 DEFAULT_MODEL = "gpt-5.4-mini"
+ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
-load_dotenv()
+load_dotenv(dotenv_path=ENV_PATH)
 
 
 def _format_feature(value: Any, unit: str = "") -> str:
