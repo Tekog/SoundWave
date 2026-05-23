@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { FileAudio, MessageSquare, Plus, Search, Send, UploadCloud, X } from "lucide-react";
+import { Bot, FileAudio, MessageSquare, Plus, Search, Send, UploadCloud, X } from "lucide-react";
 import { uploadAudio } from "./api/audio";
+import { generateSongSummary } from "./api/songSummary";
 import appConfig from "./config/app.json";
 import "./styles.css";
 
@@ -12,6 +13,24 @@ function formatBytes(bytes) {
   return `${megabytes.toFixed(2)} MB`;
 }
 
+function getAudioDuration(file) {
+  return new Promise((resolve) => {
+    const audio = document.createElement("audio");
+    const objectUrl = URL.createObjectURL(file);
+
+    audio.preload = "metadata";
+    audio.src = objectUrl;
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(Number.isFinite(audio.duration) ? Math.round(audio.duration) : null);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(null);
+    };
+  });
+}
+
 export default function App() {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -19,6 +38,10 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatStatus, setChatStatus] = useState("idle");
+  const [chatSummary, setChatSummary] = useState("");
+  const [songFeatures, setSongFeatures] = useState(null);
 
   function validateAudio(file) {
     if (!file) return "Selecciona un archivo de audio.";
@@ -45,6 +68,10 @@ export default function App() {
     }
 
     setSelectedFile(file);
+    setIsChatOpen(false);
+    setChatStatus("idle");
+    setChatSummary("");
+    setSongFeatures(null);
     setStatus("ready");
     setMessage("Archivo listo para subir.");
   }
@@ -55,13 +82,38 @@ export default function App() {
     setStatus("uploading");
     setMessage("Subiendo archivo...");
 
+    let features;
+
     try {
       const result = await uploadAudio(selectedFile);
+      const duration = await getAudioDuration(selectedFile);
+      features = {
+        filename: result.filename,
+        bpm: null,
+        duration,
+        energy: null,
+      };
+
       setStatus("success");
       setMessage(`Archivo recibido: ${result.filename} (${formatBytes(result.size)}).`);
+      setSongFeatures(features);
+      setIsChatOpen(true);
+      setChatStatus("analyzing");
+      setChatSummary("");
     } catch (error) {
       setStatus("error");
       setMessage(error.message);
+      return;
+    }
+
+    try {
+      const summaryResult = await generateSongSummary(features);
+      setChatSummary(summaryResult.summary);
+      setChatStatus("ready");
+    } catch (error) {
+      setIsChatOpen(true);
+      setChatStatus("error");
+      setChatSummary(error.message);
     }
   }
 
@@ -149,6 +201,10 @@ export default function App() {
                     setSelectedFile(null);
                     setStatus("idle");
                     setMessage("");
+                    setIsChatOpen(false);
+                    setChatStatus("idle");
+                    setChatSummary("");
+                    setSongFeatures(null);
                   }}
                 >
                   <X size={18} />
@@ -170,23 +226,55 @@ export default function App() {
           </div>
         </div>
 
-        <aside className="chat-panel" aria-label="Chat futuro">
+        <aside className={`chat-panel ${isChatOpen ? "is-open" : ""}`} aria-label="Analisis IA">
           <div className="chat-heading">
-            <MessageSquare size={22} />
+            {isChatOpen ? <Bot size={22} /> : <MessageSquare size={22} />}
             <div>
-              <h2>Chat</h2>
-              <span>Proximamente</span>
+              <h2>Chat IA</h2>
+              <span>{isChatOpen ? "Analisis musical" : "Se abre al subir un tema"}</span>
             </div>
           </div>
 
           <div className="chat-thread">
-            <div className="chat-bubble">
-              Cuando conectemos el analisis, aca vas a poder preguntar sobre el audio cargado.
-            </div>
+            {!isChatOpen ? (
+              <div className="chat-bubble muted">
+                Subi un unico tema para abrir el chat y generar un analisis profundo de la cancion.
+              </div>
+            ) : null}
+
+            {isChatOpen && songFeatures ? (
+              <div className="chat-bubble user">
+                Analiza {songFeatures.filename}
+                {songFeatures.duration ? `, duracion ${songFeatures.duration} segundos` : ""}.
+              </div>
+            ) : null}
+
+            {chatStatus === "analyzing" ? (
+              <div className="chat-bubble ai loading">
+                <span />
+                <span />
+                <span />
+                Analizando tonalidad, BPM, armonia, energia y sensacion...
+              </div>
+            ) : null}
+
+            {chatStatus === "ready" ? (
+              <div className="chat-bubble ai">
+                <strong>Analisis IA</strong>
+                <p>{chatSummary}</p>
+              </div>
+            ) : null}
+
+            {chatStatus === "error" ? (
+              <div className="chat-bubble error">
+                <strong>No pude completar el analisis IA</strong>
+                <p>{chatSummary}</p>
+              </div>
+            ) : null}
           </div>
 
           <label className="chat-input">
-            <input type="text" placeholder="Preguntar sobre este audio" disabled />
+            <input type="text" placeholder="Preguntar sobre este audio" disabled={!isChatOpen || chatStatus !== "ready"} />
             <button type="button" aria-label="Enviar mensaje" disabled>
               <Send size={18} />
             </button>
